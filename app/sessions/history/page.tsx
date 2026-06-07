@@ -12,9 +12,30 @@ import { Button } from '@/components/ui/button'
 export default function HistoryPage() {
   const [history, setHistory] = useState<LocalSession[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setHistory(loadHistory())
+    async function load() {
+      try {
+        const { fetchSessionHistory, getUser } = await import('@/lib/supabase/db')
+        const user = await getUser()
+        if (user) {
+          const data = await fetchSessionHistory()
+          setHistory(data.map(d => ({
+            ...d,
+            players: [],
+            current_match_id: undefined,
+            timer_state: undefined,
+          })))
+        } else {
+          setHistory(loadHistory())
+        }
+      } catch {
+        setHistory(loadHistory())
+      }
+      setLoading(false)
+    }
+    load()
   }, [])
 
   const handleDelete = (id: string) => {
@@ -28,14 +49,20 @@ export default function HistoryPage() {
       <PageHeader title="Session History" subtitle={`${history.length} sessions`} />
 
       <div className="px-4 space-y-3">
-        {history.length === 0 && (
+        {loading && (
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-gray-500 mt-3">Loading sessions...</p>
+          </div>
+        )}
+        {!loading && history.length === 0 && (
           <div className="text-center py-12">
             <div className="text-4xl mb-3">📅</div>
             <p className="text-gray-500">No sessions yet</p>
             <p className="text-gray-600 text-sm mt-1">Completed sessions will appear here</p>
           </div>
         )}
-        {history.map(({ session, matches, teams }) => {
+        {!loading && history.map(({ session, matches, teams }) => {
           const finished = matches.filter(m => m.status === 'finished').length
           return (
             <div key={session.id} className="bg-gray-900 rounded-2xl p-4">

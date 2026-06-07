@@ -28,6 +28,9 @@ interface SessionState {
   updateScore: (matchId: string, scoreA: number, scoreB: number) => void
   confirmMatch: (matchId: string) => void
 
+  syncSessionToSupabase: () => Promise<void>
+  loadSessionFromSupabase: (sessionId: string) => Promise<void>
+
   computeStandings: () => Standing[]
   computePlayerStats: () => PlayerStats[]
 }
@@ -60,6 +63,13 @@ export const useSessionStore = create<SessionState>()(
             current_match_id: state.currentMatchId ?? undefined,
             timer_state: state.timerState ?? undefined,
           })
+          // Sync completed session to Supabase
+          const completedSession: Session = { ...state.session, status: 'completed' }
+          import('@/lib/supabase/db').then(async ({ upsertSession, getUser }) => {
+            const user = await getUser()
+            if (!user) return
+            upsertSession(completedSession).catch(console.error)
+          })
         }
         set({ session: null, players: [], teams: [], matches: [], events: [], currentMatchId: null, timerState: null })
       },
@@ -81,6 +91,14 @@ export const useSessionStore = create<SessionState>()(
               : m
           ),
         }))
+        const updatedMatch = get().matches.find(m => m.id === matchId)
+        if (updatedMatch) {
+          import('@/lib/supabase/db').then(async ({ upsertMatch, getUser }) => {
+            const user = await getUser()
+            if (!user) return
+            upsertMatch(updatedMatch).catch(console.error)
+          })
+        }
       },
 
       pauseTimer: () => {
@@ -102,7 +120,6 @@ export const useSessionStore = create<SessionState>()(
       resumeTimer: () => {
         set(state => {
           if (!state.timerState || state.timerState.is_running) return state
-          const pauseDuration = Date.now() - (state.timerState.paused_at || Date.now())
           return {
             timerState: {
               ...state.timerState,
@@ -124,6 +141,14 @@ export const useSessionStore = create<SessionState>()(
               : m
           ),
         }))
+        const updatedMatch = get().matches.find(m => m.id === matchId)
+        if (updatedMatch) {
+          import('@/lib/supabase/db').then(async ({ upsertMatch, getUser }) => {
+            const user = await getUser()
+            if (!user) return
+            upsertMatch(updatedMatch).catch(console.error)
+          })
+        }
       },
 
       addGoal: (eventData) => {
@@ -156,9 +181,17 @@ export const useSessionStore = create<SessionState>()(
             ),
           }
         })
+        import('@/lib/supabase/db').then(async ({ upsertEvent, upsertMatch, getUser }) => {
+          const user = await getUser()
+          if (!user) return
+          upsertEvent(event).catch(console.error)
+          const updatedMatch = get().matches.find(m => m.id === eventData.match_id)
+          if (updatedMatch) upsertMatch(updatedMatch).catch(console.error)
+        })
       },
 
       undoLastGoal: (matchId) => {
+        let removedEventId: string | null = null
         set(state => {
           const matchEvents = state.events
             .filter(e => e.match_id === matchId)
@@ -166,6 +199,7 @@ export const useSessionStore = create<SessionState>()(
 
           if (matchEvents.length === 0) return state
           const lastEvent = matchEvents[0]
+          removedEventId = lastEvent.id
           const match = state.matches.find(m => m.id === matchId)
           if (!match) return state
 
@@ -187,6 +221,16 @@ export const useSessionStore = create<SessionState>()(
             ),
           }
         })
+        if (removedEventId) {
+          const eventId = removedEventId
+          import('@/lib/supabase/db').then(async ({ deleteEvent, upsertMatch, getUser }) => {
+            const user = await getUser()
+            if (!user) return
+            deleteEvent(eventId).catch(console.error)
+            const updatedMatch = get().matches.find(m => m.id === matchId)
+            if (updatedMatch) upsertMatch(updatedMatch).catch(console.error)
+          })
+        }
       },
 
       updateScore: (matchId, scoreA, scoreB) => {
@@ -203,6 +247,50 @@ export const useSessionStore = create<SessionState>()(
             m.id === matchId ? { ...m, status: 'finished' as const, ended_at: m.ended_at || new Date().toISOString() } : m
           ),
         }))
+        const updatedMatch = get().matches.find(m => m.id === matchId)
+        const currentSession = get().session
+        if (updatedMatch) {
+          import('@/lib/supabase/db').then(async ({ upsertMatch, upsertSession, getUser }) => {
+            const user = await getUser()
+            if (!user) return
+            upsertMatch(updatedMatch).catch(console.error)
+            if (currentSession) upsertSession(currentSession).catch(console.error)
+          })
+        }
+      },
+
+      syncSessionToSupabase: async () => {
+        const state = get()
+        if (!state.session) return
+        try {
+          const { upsertSession, upsertTeams, upsertMatches, getUser } = await import('@/lib/supabase/db')
+          const user = await getUser()
+          if (!user) return
+          await upsertSession(state.session)
+          await upsertTeams(state.teams)
+          await upsertMatches(state.matches)
+        } catch (e) {
+          console.error('Failed to sync session to Supabase', e)
+        }
+      },
+
+      loadSessionFromSupabase: async (sessionId: string) => {
+        try {
+          const { fetchFullSession, getUser } = await import('@/lib/supabase/db')
+          const user = await getUser()
+          if (!user) return
+          const { session, teams, matches, events } = await fetchFullSession(sessionId)
+          if (session) {
+            set({
+              session: session as Session,
+              teams: teams as Team[],
+              matches: matches as Match[],
+              events: events as MatchEvent[],
+            })
+          }
+        } catch (e) {
+          console.error('Failed to load session from Supabase', e)
+        }
       },
 
       computeStandings: () => {

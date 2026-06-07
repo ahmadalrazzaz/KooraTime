@@ -129,6 +129,15 @@ export function SessionWizard() {
     setTeams(teams)
     setMatches(matches)
 
+    // Sync to Supabase
+    import('@/lib/supabase/db').then(async ({ upsertSession, upsertTeams, upsertMatches, getUser }) => {
+      const user = await getUser()
+      if (!user) return
+      await upsertSession(session)
+      await upsertTeams(teams)
+      await upsertMatches(matches)
+    }).catch(console.error)
+
     router.push(`/sessions/${sessionId}`)
   }
 

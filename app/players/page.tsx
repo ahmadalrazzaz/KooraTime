@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePlayerStore } from '@/stores/player-store'
 import { Navbar } from '@/components/layout/navbar'
 import { PageHeader } from '@/components/layout/page-header'
@@ -10,8 +10,12 @@ import { Player } from '@/types'
 import { Plus } from 'lucide-react'
 
 export default function PlayersPage() {
-  const { players, addPlayer, updatePlayer, deletePlayer } = usePlayerStore()
+  const { players, addPlayer, updatePlayer, deletePlayer, syncFromSupabase } = usePlayerStore()
   const [showAddModal, setShowAddModal] = useState(false)
+
+  useEffect(() => {
+    syncFromSupabase()
+  }, [])
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
