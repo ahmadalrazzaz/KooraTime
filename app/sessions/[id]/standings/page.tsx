@@ -1,11 +1,10 @@
 'use client'
-import { use } from 'react'
 import { useSessionStore } from '@/stores/session-store'
 import { PageHeader } from '@/components/layout/page-header'
 import { StandingsTable } from '@/components/standings/standings-table'
 
-export default function StandingsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function StandingsPage({ params }: { params: { id: string } }) {
+  const { id } = params
   const { session, computeStandings } = useSessionStore()
   const standings = computeStandings()
 

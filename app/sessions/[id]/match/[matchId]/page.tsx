@@ -1,5 +1,5 @@
 'use client'
-import { use, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSessionStore } from '@/stores/session-store'
 import { RefereeTimer } from '@/components/match/referee-timer'
@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button'
 import { ChevronLeft, Flag } from 'lucide-react'
 import { MatchEvent } from '@/types'
 
-export default function MatchPage({ params }: { params: Promise<{ id: string; matchId: string }> }) {
-  const { id, matchId } = use(params)
+export default function MatchPage({ params }: { params: { id: string; matchId: string } }) {
+  const { id, matchId } = params
   const router = useRouter()
   const { session, matches, teams, players, events, startMatch, endMatch, addGoal, undoLastGoal, timerState } = useSessionStore()
 

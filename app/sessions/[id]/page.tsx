@@ -1,5 +1,4 @@
 'use client'
-import { use } from 'react'
 import { useSessionStore } from '@/stores/session-store'
 import { PageHeader } from '@/components/layout/page-header'
 import { MatchCard } from '@/components/match/match-card'
@@ -8,8 +7,8 @@ import Link from 'next/link'
 import { Trophy, BarChart3, MapPin, Clock } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
-export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function SessionPage({ params }: { params: { id: string } }) {
+  const { id } = params
   const { session, matches, teams } = useSessionStore()
 
   if (!session || session.id !== id) {

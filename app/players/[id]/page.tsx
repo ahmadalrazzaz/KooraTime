@@ -1,5 +1,4 @@
 'use client'
-import { use } from 'react'
 import { usePlayerStore } from '@/stores/player-store'
 import { PageHeader } from '@/components/layout/page-header'
 import { Star, Trophy, Target, Handshake } from 'lucide-react'
@@ -13,8 +12,8 @@ const positionColors: Record<string, string> = {
   flexible: 'text-purple-400 bg-purple-900',
 }
 
-export default function PlayerProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function PlayerProfilePage({ params }: { params: { id: string } }) {
+  const { id } = params
   const { getPlayer } = usePlayerStore()
   const player = getPlayer(id)
 

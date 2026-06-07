@@ -1,13 +1,13 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/auth/page": "app/auth/page.js",
   "/page": "app/page.js",
   "/players/[id]/page": "app/players/[id]/page.js",
-  "/players/page": "app/players/page.js",
-  "/auth/page": "app/auth/page.js",
   "/sessions/[id]/match/[matchId]/page": "app/sessions/[id]/match/[matchId]/page.js",
-  "/sessions/[id]/page": "app/sessions/[id]/page.js",
-  "/sessions/[id]/stats/page": "app/sessions/[id]/stats/page.js",
-  "/sessions/history/page": "app/sessions/history/page.js",
+  "/players/page": "app/players/page.js",
   "/sessions/[id]/standings/page": "app/sessions/[id]/standings/page.js",
-  "/sessions/new/page": "app/sessions/new/page.js"
+  "/sessions/[id]/stats/page": "app/sessions/[id]/stats/page.js",
+  "/sessions/[id]/page": "app/sessions/[id]/page.js",
+  "/sessions/new/page": "app/sessions/new/page.js",
+  "/sessions/history/page": "app/sessions/history/page.js"
 }
